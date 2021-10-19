@@ -23,5 +23,5 @@ type useStoreProps = {
 export const useEditProdu = create<useStoreProps>(set => ({
     value: [] as unicPoduProps[],
     addArray: (data: unicPoduProps[]) => set(() => ({ value: data})),
-    addUnicProdu: (data: unicPoduProps) => set((state) => ({ value: [...state.value, data]}))
+    addUnicProdu: (data: unicPoduProps) => set((state) => ({ value: [...state.value, data]})),
 }))

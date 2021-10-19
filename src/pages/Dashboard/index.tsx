@@ -27,6 +27,8 @@ import { useEditProdu } from '../../hooks/editProdu';
 
 import UnicProdu from './UnicProdu'; 
 
+import toast, { Toaster } from 'react-hot-toast'
+
 type pedidoProps = {
     id: string,
     forma_pagamento: number,
@@ -87,7 +89,7 @@ const Dashboard: React.FC = () => {
     const [pedidoUnicoEdit, setPedidoUnicoEdit] = useState<pedidoProps>();
     const [pedidos, setPedidos] = useState<pedidoProps[]>([]);
 
-    const [pedidoUnicoFixed, setPedidoUnicoFixed] = useState<arrayUnit[]>();
+    // const [pedidoUnicoFixed, setPedidoUnicoFixed] = useState<arrayUnit[]>();
 
     const [isModalOPen, setModalState] = useState(false);
     const toggleModal = () => setModalState(!isModalOPen);
@@ -122,7 +124,7 @@ const Dashboard: React.FC = () => {
 
     function editPedidoUnic(data: pedidoProps) {
         addArray(data.itens_pedido);
-        setPedidoUnicoFixed(data.itens_pedido);
+        localStorage.setItem('@10ejos: dadosArrayPedido', JSON.stringify((data.itens_pedido)));
         setPedidoUnicoEdit(data);
         toggleModalEdit();
     };
@@ -144,61 +146,86 @@ const Dashboard: React.FC = () => {
 
     function submitReabrirPedido() {
 
-        // const algumaCoisa = valueFixed.map(pedido => {
-        //     const array = value.findIndex((object) => object.id === pedido.id);
+        const useri = localStorage.getItem('@10ejos: dadosArrayPedido');
+        const userParse: arrayUnit[] = useri !== null && JSON.parse(useri)
 
-        //     var returni = {}
+        const algumaCoisa = userParse.map(pedido => {
+            const array = value.findIndex((object) => object.id === pedido.id);
 
-        //     if (pedido.units === value[array].units) {
-        //         return null;
-        //     }
+            var returni = {}
 
-        //     if (pedido.units !== value[array].units) {
-        //         var returnid = {
-        //             id: value[array].id,
-        //             price: value[array].price,
-        //             title: value[array].title,
-        //             units: {
-        //                 from: pedido.units,
-        //                 to: value[array].units
-        //             },
-        //             Idloja: value[array].Idloja,
-        //             changeFor: "R$0,00",
-        //             promotion: value[array].promotion,
-        //             valueMoney: value[array].valueMoney,
-        //             imageProduct: value[array].imageProduct,
-        //             valuePromotion: value[array].valuePromotion
-        //         } 
+            if (pedido.units === value[array].units) {
+                
+                return null;
+            }
 
-        //         returni = returnid;
-        //     }
+            if (pedido.units !== value[array].units) {
+                var returnid = {
+                    id: value[array].id,
+                    price: value[array].price,
+                    title: value[array].title,
+                    units: {
+                        from: pedido.units === undefined ? '1' : pedido.units,
+                        to: value[array].units
+                    },
+                    Idloja: value[array].Idloja,
+                    changeFor: "R$0,00",
+                    promotion: value[array].promotion,
+                    valueMoney: value[array].valueMoney,
+                    imageProduct: value[array].imageProduct,
+                    valuePromotion: value[array].valuePromotion
+                } 
 
-        //     return returni;
-        // })
-        
+                returni = returnid;
+            }
 
-        // console.log({
-        //     id: pedidoUnico?.id,
-        //     forma_pagamento: pedidoUnico?.forma_pagamento,
-        //     cupom_desconto: pedidoUnico?.cupom_desconto,
-        //     valor_frete: pedidoUnico?.valor_frete,
-        //     valor_total: pedidoUnico?.valor_total,
-        //     valor_desconto: pedidoUnico?.valor_desconto,
-        //     valor_final: pedidoUnico?.valor_final,
-        //     status: 10,
-        //     endereco_entrega: pedidoUnico?.endereco_entrega,
-        //     itens_pedido: value,
-        //     alteracoes:algumaCoisa,
-        //     created_at: pedidoUnico?.created_at,
-        //     user: pedidoUnico?.user
-        // })
+            return returni;
+        })
 
-        console.log(pedidoUnicoFixed)
-        console.log(value)
+        const ada = algumaCoisa.filter(item => item)
+
+        if(ada.length === 0 ) {
+            toast.error("Não é possivel salvar sem alguma alteração")
+            return;
+        }
+
+        const summary = value?.reduce((acc, transaction) => { 
+            if(transaction.promotion) {
+                acc.total += Number(transaction.valuePromotion) * Number(transaction.units);
+            } else {
+                acc.total += Number(transaction.price);
+            }
+
+            return acc;
+            },{
+              total: 0 
+            }
+        )
+
+        api.put(`/stores/${user.loja_id}/orders/${pedidoUnico?.id}/reabrir-pedido`, {
+            id: pedidoUnico?.id,
+            forma_pagamento: pedidoUnico?.forma_pagamento,
+            cupom_desconto: pedidoUnico?.cupom_desconto,
+            valor_frete: pedidoUnico?.valor_frete,
+            valor_total: pedidoUnico?.valor_total,
+            valor_desconto: pedidoUnico?.valor_desconto,
+            valor_final: summary.total,
+            status: 10,
+            endereco_entrega: pedidoUnico?.endereco_entrega,
+            itens_pedido: value,
+            alteracoes:algumaCoisa,
+            created_at: pedidoUnico?.created_at,
+            user: pedidoUnico?.user
+        })
+
+        toggleModal();
+        toggleModalEdit();
     }
 
     return (
         <Container>
+            <Toaster />
+
             <Header>
                 <h1>Pedidos em análise</h1>
 
@@ -210,6 +237,7 @@ const Dashboard: React.FC = () => {
                     <option value='5'>Em entrega</option>
                     <option value='6'>Concluido</option>
                     <option value='7'>Cancelado pela loja</option>
+                    <option value="10">Reaberto pela loja</option>
                     <option value="8">Todos</option>
                 </select>
             </Header>
@@ -250,6 +278,7 @@ const Dashboard: React.FC = () => {
                             {pedido.status === 5 && <div className={`pedidopendente ${pedido.status === 5 && 'color4'}`}>Em entrega</div>}
                             {pedido.status === 6 && <div className={`pedidopendente ${pedido.status === 6 && 'color5'}`}>Concluido</div>}
                             {pedido.status === 7 && <div className={`pedidopendente ${pedido.status === 7 && 'color6'}`}>Cancelado pela loja</div>}
+                            {pedido.status === 10 && <div className={`pedidopendente ${pedido.status === 10 && 'color7'}`}>Pedido reaberto</div>}
                         </div>
 
                         <div className="col3">
@@ -284,6 +313,7 @@ const Dashboard: React.FC = () => {
                             {pedido.status === 5 && <div className={`pedidopendente ${pedido.status === 5 && 'color4'}`}>Em entrega</div>}
                             {pedido.status === 6 && <div className={`pedidopendente ${pedido.status === 6 && 'color5'}`}>Concluido</div>}
                             {pedido.status === 7 && <div className={`pedidopendente ${pedido.status === 7 && 'color6'}`}>Cancelado pela loja</div>}
+                            {pedido.status === 10 && <div className={`pedidopendente ${pedido.status === 10 && 'color7'}`}>Pedido reaberto</div>}
                         </div>
 
                         <div className="col3">

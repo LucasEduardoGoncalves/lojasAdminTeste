@@ -27,7 +27,6 @@ const UnicProdu: React.FC<PropsContainer> = ({item}) => {
     const { value } = useEditProdu();
     const { register, handleSubmit } = useForm();
 
-
     const edit: SubmitHandler<PropsInput> = (data) => {   
         const array = value.findIndex((object) => object.id === item.id)
 
@@ -43,8 +42,6 @@ const UnicProdu: React.FC<PropsContainer> = ({item}) => {
                 valuePromotion: item.valuePromotion,
                 promotion: item.promotion,
             };
-        } else {
-            value.splice(array, 1);
         }
     }
 
@@ -52,9 +49,9 @@ const UnicProdu: React.FC<PropsContainer> = ({item}) => {
         <Container onSubmit={handleSubmit(edit)}>
             <span>
                 <img src={item.imageProduct} alt="10ejos-Lojas" />
+                
+                <button type="submit">Salvar</button>
 
-                {/* <button onClick={consoleLog1}>consolelog</button> */}
-                <button type="submit">edit</button>
             </span>
 
             <div className="descrição">                           

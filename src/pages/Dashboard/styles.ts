@@ -134,6 +134,10 @@ export const BlocoMaior = styled.div`
             .color6 {
                 background: #820303;
             }
+
+            .color7 {
+                background: #9e25fc;
+            }
         }
 
         .col3{
